@@ -3,7 +3,8 @@
 OTA::OTA() {
     // Constructor
     _hostname = "ESP32";
-    _password = "123456";
+    const char* passwordEnv = std::getenv("OTA_PASSWORD");
+    _password = passwordEnv ? passwordEnv : "";
     _port = 3232;
     _certificate = nullptr;
     _privateKey = nullptr;
