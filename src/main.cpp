@@ -1,18 +1,23 @@
 #include <Arduino.h>
+#include <BLE/BLE.h>
 
-// put function declarations here:
-int myFunction(int, int);
+BLE bleServer;
 
 void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+  Serial.begin(115200);
+  Serial.println("Starting BLE Server...");
+
+  bleServer.begin();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-}
+  if (bleServer.deviceConnected) {
+    // Do something when the device is connected
+    Serial.println("Device connected");
+  } else {
+    // Do something when the device is disconnected
+    Serial.println("Device disconnected");
+  }
 
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+  delay(1000); // Delay for 1 second
 }
