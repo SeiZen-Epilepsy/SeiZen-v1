@@ -13,8 +13,9 @@ SeiZen-v1/
 ├── .pio/                   # PlatformIO build files and dependencies
 ├── .vscode/                # VS Code configuration
 ├── docs/                   # Project documentation
-│   ├── Guidelines.md       # Coding guidelines and standards
-│   └── RTOS.md             # RTOS implementation details
+│   ├── RTOS Guideline      # Real-Time Operation System guideline folder
+│   │   └── README.md       # RTOS implementation details
+│   └── README.md           # Coding guidelines and standards
 ├── include/                # Header files
 ├── lib/                    # Project-specific libraries
 │   ├── Config/             # Configuration settings

@@ -334,4 +334,4 @@ void printMemoryStats() {
 
 This RTOS implementation provides a robust foundation for real-time operations in the SeiZen-v1 project. Following these guidelines ensures consistent and maintainable task implementations across the project.
 
-For general C++ coding guidelines, please refer to the [Guidelines.md](Guidelines.md) documentation.
+For general C++ coding guidelines, please refer to the [Guidelines](../README.md) documentation.

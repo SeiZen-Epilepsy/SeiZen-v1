@@ -267,4 +267,4 @@ ReturnType methodName(ParamType param);
 
 Following these guidelines will maintain code consistency and improve project maintainability. These conventions are based on existing code patterns in the SeiZen project, and they should be adhered to when adding new C++ modules or modifying existing ones.
 
-For RTOS-specific implementation guidelines, please refer to the [RTOS.md](RTOS.md) documentation.
+For RTOS-specific implementation guidelines, please refer to the [RTOS Guidelines](RTOS_Guideline/README.md) documentation.
