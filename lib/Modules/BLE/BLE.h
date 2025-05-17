@@ -7,35 +7,31 @@
 #include <BLEServer.h>
 
 class BLE {
-    public:
+public:
     BLE();
     void begin();
     void setValue(const std::string &value);
     bool deviceConnected;
-    
-    private:
+
+private:
     BLEServer *pServer;
     BLECharacteristic *pCharacteristic;
 };
 
 class MyServerCallbacks : public BLEServerCallbacks {
-    public:
-        MyServerCallbacks(BLE* server);
-        void onConnect(BLEServer* pServer);
-        void onDisconnect(BLEServer* pServer);
+public:
+    MyServerCallbacks(BLE* server);
+    void onConnect(BLEServer* pServer);
+    void onDisconnect(BLEServer* pServer);
 
-    private:
-        BLE* bleServer;
+private:
+    BLE* bleServer;
 };
 
-class MySecurity : public BLESecurityCallbacks {
-    public:
-        MySecurity(BLE* server);
-        uint32_t onPassKeyRequest();
-        void onAuthenticationComplete(bool success);
-    
-    private:
-        BLE* bleServer;
-    };
+class MySecurityCallbacks : public BLESecurityCallbacks {
+public:
+    uint32_t onPassKeyRequest();
+    void onAuthenticationComplete(esp_ble_auth_cmpl_t cmpl);
+};
 
 #endif
