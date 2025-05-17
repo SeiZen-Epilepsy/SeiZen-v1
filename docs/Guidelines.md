@@ -29,225 +29,242 @@ lib/
 │   ├── OTA/
 │   │   ├── OTA.h
 │   │   └── OTA.cpp
-│   ├── SendData/
-│   │   ├── SendData.h
-│   │   └── SendData.cpp
-│   └── LEDBlink/
-│       ├── LEDBlink.h
-│       └── LEDBlink.cpp
+│   └── SendData/
+│       ├── SendData.h
+│       └── SendData.cpp
 ├── Config/
 └── README
 ```
 
-## File Organization
+## Creating New Files
 
-When adding new functionality to the project, follow these guidelines:
+When adding new functionality to the project, follow these guidelines for creating and organizing your files:
 
-1. Place your files in the appropriate subdirectory based on their purpose:
+### Step 1: Directory Creation
 
-   - Hardware-related components go in `lib/Modules/`
-   - Task-related components go in `lib/Task/`
-   - Configuration components go in `lib/Config/`
+Identify the appropriate category for your component:
 
-2. Create a new subdirectory for your component when appropriate (e.g., `lib/Modules/MyComponent/`)
+- Hardware/peripheral interfaces → `lib/Modules/`
+- Task-based components → `lib/Task/`
+- Configuration files → `lib/Config/`
 
-3. Keep related `.h` and `.cpp` files together in the same directory
+### Step 2: Header File (.h) Creation
 
-4. Use descriptive names for your directories and files that clearly indicate their functionality
-
-## RTOS Task Implementation Guidelines
-
-### Task Class Structure
-
-When implementing a new FreeRTOS task, follow this standard structure:
+1. Create the header file with the following structure:
 
 ```cpp
-class TaskName {
-public:
-    // Constructor with dependencies
-    TaskName(dependency1* dep1, dependency2* dep2);
-    ~TaskName();
-
-    // Task management methods
-    bool startTask(uint32_t stackSize = defaultStackSize,
-                  UBaseType_t priority = defaultPriority);
-    void stopTask();
-    bool isRunning() const;
-
-private:
-    // Static task function
-    static void taskFunction(void* pvParameters);
-
-    // Task control variables
-    TaskHandle_t taskHandle;
-    bool running;
-
-    // Dependencies
-    dependency1* _dep1;
-    dependency2* _dep2;
-
-    // Task parameters
-    uint32_t _interval;
-};
-```
-
-### Task Implementation Pattern
-
-1. **Constructor**:
-   - Initialize member variables
-   - Set default values
-   - Store dependencies
-
-```cpp
-TaskName::TaskName(dependency1* dep1, dependency2* dep2) :
-    _dep1(dep1),
-    _dep2(dep2),
-    taskHandle(NULL),
-    running(false),
-    _interval(1000) {
-}
-```
-
-2. **Task Management**:
-   - Implement start/stop methods
-   - Handle task creation/deletion
-   - Check for errors
-
-```cpp
-bool TaskName::startTask(uint32_t stackSize, UBaseType_t priority) {
-    if (running) return true;
-
-    BaseType_t result = xTaskCreate(
-        taskFunction,
-        "TaskName",
-        stackSize,
-        this,
-        priority,
-        &taskHandle
-    );
-
-    if (result != pdPASS) {
-        Serial.println("Failed to create task");
-        return false;
-    }
-
-    running = true;
-    return true;
-}
-```
-
-3. **Task Function**:
-   - Implement the main task loop
-   - Handle errors and edge cases
-   - Use appropriate delays
-
-```cpp
-void TaskName::taskFunction(void* pvParameters) {
-    TaskName* task = static_cast<TaskName*>(pvParameters);
-
-    for (;;) {
-        // Task logic here
-        vTaskDelay(task->_interval / portTICK_PERIOD_MS);
-    }
-}
-```
-
-### Task Priority Guidelines
-
-- Use consistent priority levels across tasks:
-  - Priority 1: Background tasks (LED indicators, status updates)
-  - Priority 2: Communication tasks (BLE, WiFi)
-  - Priority 3: Critical tasks (Sensor reading, data processing)
-
-### Memory Management
-
-- Use appropriate stack sizes based on task complexity:
-  - Simple tasks (LED control): 1024 words
-  - Communication tasks: 2048 words
-  - Complex tasks: 4096 words
-
-### Error Handling
-
-Implement comprehensive error checking:
-
-```cpp
-bool TaskName::startTask(uint32_t stackSize, UBaseType_t priority) {
-    // Check dependencies
-    if (!_dep1 || !_dep2) {
-        Serial.println("Invalid dependencies");
-        return false;
-    }
-
-    // Create task
-    BaseType_t result = xTaskCreate(...);
-    if (result != pdPASS) {
-        Serial.println("Task creation failed");
-        return false;
-    }
-
-    return true;
-}
-```
-
-## Examples from Existing Modules
-
-[Previous examples remain unchanged...]
-
-### SendData Task Example
-
-**SendData.h**:
-
-```cpp
-#ifndef SEND_DATA_H
-#define SEND_DATA_H
+#ifndef MY_COMPONENT_H
+#define MY_COMPONENT_H
 
 #include <Arduino.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <BLE/BLE.h>
+// Add other necessary includes here
 
-class SendData {
+class MyComponent {
 public:
-    SendData(BLE* ble, Dummy* sensor);
-    ~SendData();
+    // Constructor & Destructor
+    MyComponent();
+    ~MyComponent();
 
-    bool startTask(uint32_t stackSize = 2048, UBaseType_t priority = 1);
-    void stopTask();
-    bool isRunning() const;
+    // Initialization method (if needed)
+    void begin();
+
+    // Core functionality methods
+    void doSomething();
+    void handleEvent();
+
+    // Getters & Setters
+    void setValue(int value);
+    int getValue() const;
 
 private:
-    static void taskFunction(void* pvParameters);
-    TaskHandle_t taskHandle;
-    bool running;
+    // Private helper methods
+    void helperFunction();
 
-    BLE* bleServer;
-    Dummy* dummySensor;
+    // Member variables (use underscore prefix)
+    int _value;
+    bool _isInitialized;
 };
 
-#endif
+#endif // MY_COMPONENT_H
 ```
 
-## Best Practices for RTOS Tasks
+### Step 3: Implementation File (.cpp) Creation
 
-1. **Task Creation**
+1. Create the implementation file with the following structure:
 
-   - Create tasks in setup() or when dependencies are ready
-   - Use appropriate stack sizes and priorities
-   - Check task creation success
+```cpp
+#include "MyComponent.h"
 
-2. **Task Management**
+// Constructor implementation
+MyComponent::MyComponent() :
+    _value(0),
+    _isInitialized(false)
+{
+}
 
-   - Implement proper cleanup in destructors
-   - Handle task deletion safely
-   - Monitor task status
+// Destructor implementation
+MyComponent::~MyComponent() {
+    // Cleanup code here
+}
 
-3. **Resource Sharing**
-   - Use FreeRTOS primitives for synchronization
-   - Avoid long critical sections
-   - Handle shared resource access carefully
+// Initialization method
+void MyComponent::begin() {
+    if (_isInitialized) return;
+
+    // Initialization code here
+    _isInitialized = true;
+}
+
+// Core functionality methods
+void MyComponent::doSomething() {
+    if (!_isInitialized) {
+        Serial.println("Error: Component not initialized");
+        return;
+    }
+
+    // Implementation code here
+}
+
+// Getter & Setter implementations
+void MyComponent::setValue(int value) {
+    _value = value;
+}
+
+int MyComponent::getValue() const {
+    return _value;
+}
+
+// Private helper method implementations
+void MyComponent::helperFunction() {
+    // Helper code here
+}
+```
+
+## Coding Style Guidelines
+
+### Header File Guidelines
+
+1. **Include Guards**:
+
+   - Use `#ifndef` and `#define` guards
+   - Name should match component name in uppercase
+   - End with `_H` suffix
+
+2. **Dependencies**:
+
+   - Include only necessary headers
+   - Use angle brackets for external libraries
+   - Use quotes for project files
+
+3. **Class Declaration**:
+   - Start with public members
+   - Group related methods together
+   - Document complex functionality
+   - Use const where appropriate
+
+### Implementation File Guidelines
+
+1. **File Organization**:
+
+   - Include corresponding header first
+   - Group method implementations logically
+   - Implement methods in same order as declared
+
+2. **Constructor Implementation**:
+
+   - Initialize all member variables
+   - Use initialization lists
+   - Check for valid parameters
+
+3. **Error Handling**:
+   - Check initialization state
+   - Validate parameters
+   - Report errors via Serial for debugging
+
+### Method Implementation
+
+1. **Method Structure**:
+
+```cpp
+ReturnType ClassName::methodName(ParamType param) {
+    // 1. Parameter validation
+    if (!isValid(param)) {
+        Serial.println("Invalid parameter");
+        return errorValue;
+    }
+
+    // 2. State checking
+    if (!_isInitialized) {
+        Serial.println("Not initialized");
+        return errorValue;
+    }
+
+    // 3. Main logic
+    // Implementation code here
+
+    // 4. Return result
+    return result;
+}
+```
+
+2. **Common Patterns**:
+   - Begin with parameter validation
+   - Check object state
+   - Implement main logic
+   - Return results
+
+## Naming Conventions
+
+1. **Classes**:
+
+   - PascalCase (e.g., `MyComponent`)
+   - Descriptive of functionality
+
+2. **Methods**:
+
+   - camelCase (e.g., `doSomething`)
+   - Verb-based names
+   - Use `get`/`set` for accessors
+
+3. **Variables**:
+
+   - camelCase
+   - Private members with underscore prefix
+   - Descriptive names
+
+4. **Constants**:
+   - UPPERCASE with underscores
+   - Descriptive names
+
+## Documentation
+
+1. **Class Documentation**:
+
+```cpp
+/**
+ * @brief Brief description of the class
+ *
+ * Detailed description of the class functionality,
+ * usage, and any important notes.
+ */
+class MyComponent {
+    // Class implementation
+};
+```
+
+2. **Method Documentation**:
+
+```cpp
+/**
+ * @brief Brief description of method
+ * @param param Description of parameter
+ * @return Description of return value
+ */
+ReturnType methodName(ParamType param);
+```
 
 ## Conclusion
 
 Following these guidelines will maintain code consistency and improve project maintainability. These conventions are based on existing code patterns in the SeiZen project, and they should be adhered to when adding new C++ modules or modifying existing ones.
 
-If you have questions or suggestions for improving these guidelines, please discuss them with the team before implementing significant deviations from these standards.
+For RTOS-specific implementation guidelines, please refer to the [RTOS.md](RTOS.md) documentation.
