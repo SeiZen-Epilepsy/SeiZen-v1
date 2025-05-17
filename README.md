@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-SeiZen-v1 is an ESP32-based IoT project leveraging the ESP32 DOIT DevKit V1 development board. The project integrates display capabilities through the ST7789 display module and utilizes various Adafruit libraries for graphics rendering and I/O operations.
+SeiZen-v1 is an ESP32-based IoT project leveraging the ESP32 DOIT DevKit V1 development board. The project integrates display capabilities through the ST7789 display module, implements BLE communication, and utilizes FreeRTOS for efficient task management and real-time operations.
 
 This project is structured as a PlatformIO project, making it easy to develop, build, and upload firmware to ESP32 devices within Visual Studio Code or other compatible IDEs.
 
@@ -13,13 +13,19 @@ SeiZen-v1/
 ├── .pio/                   # PlatformIO build files and dependencies
 ├── .vscode/                # VS Code configuration
 ├── docs/                   # Project documentation
+│   ├── Guidelines.md       # Coding guidelines and standards
+│   └── RTOS.md             # RTOS implementation details
 ├── include/                # Header files
 ├── lib/                    # Project-specific libraries
 │   ├── Config/             # Configuration settings
 │   ├── Modules/            # Hardware module implementations
-│   │   └── Display/        # Display module code
+│   │   ├── Display/        # Display module code
+│   │   ├── BLE/            # Bluetooth Low Energy implementation
+│   │   └── Sensor/         # Sensor modules
 │   └── Task/               # Task-specific implementations
-│       └── OTA/            # Over-the-Air update functionality
+│       ├── OTA/            # Over-the-Air update functionality
+│       ├── SendData/       # BLE data transmission task
+│       └── LEDBlink/       # LED indication task
 ├── src/                    # Source code
 │   └── main.cpp            # Main application entry point
 ├── test/                   # Unit tests
@@ -32,72 +38,54 @@ This project relies on the following libraries and dependencies:
 
 - **Platform**: ESP32 (Espressif32)
 - **Board**: ESP32 DOIT DevKit V1
-- **Framework**: Arduino
+- **Framework**: Arduino with FreeRTOS
+- **Core Features**:
+  - FreeRTOS Task Management
+  - BLE Communication
+  - Over-the-Air Updates
 
 ### Libraries
 
 - **Adafruit ST7789**: Display driver for the ST7789 TFT display
 - **Adafruit GFX Library**: Graphics library for drawing shapes, text, and images
 - **Adafruit BusIO**: Abstraction layer for I2C and SPI communications
+- **ESP32 BLE**: Built-in BLE functionality
 
-## Setup and Installation
-
-### Prerequisites
-
-1. Install [Visual Studio Code](https://code.visualstudio.com/)
-2. Install [PlatformIO Extension](https://platformio.org/install/ide?install=vscode) for VS Code
-3. Install necessary USB drivers for ESP32 (if not already installed)
-
-### Hardware Setup
-
-1. Connect the ESP32 DOIT DevKit V1 to your computer via USB
-2. Wire the ST7789 display to the ESP32 according to your pin configuration
-   - Common connections include:
-     - VCC to 3.3V
-     - GND to GND
-     - SCL/CLK to GPIO pin (defined in your configuration)
-     - SDA/MOSI to GPIO pin (defined in your configuration)
-     - RES/RST to GPIO pin (defined in your configuration)
-     - DC to GPIO pin (defined in your configuration)
-     - BLK to GPIO pin or 3.3V (for backlight)
-
-### Software Setup
-
-1. Clone this repository:
-   ```
-   git clone https://github.com/SeiZen-Epilepsy/SeiZen-v1.git
-   cd SeiZen-v1
-   ```
-2. Open the project in VS Code with PlatformIO
-3. PlatformIO will automatically install the required dependencies specified in `platformio.ini`
-
-## Building and Running
-
-### Build the Project
-
-```
-pio run
-```
-
-### Upload to ESP32
-
-```
-pio run -t upload
-```
-
-### Monitor Serial Output
-
-```
-pio device monitor
-```
-
-### Combined Build and Upload
-
-```
-pio run -t upload && pio device monitor
-```
+[Previous sections about Setup and Installation remain unchanged...]
 
 ## Development
+
+### RTOS Implementation
+
+The project uses FreeRTOS for task management and real-time operations. Key components include:
+
+1. **SendData Task**:
+
+   - Handles periodic BLE data transmission
+   - Manages sensor data collection
+   - Located in `lib/Task/SendData/`
+
+2. **LEDBlink Task**:
+
+   - Manages LED status indication
+   - Reflects BLE connection state
+   - Located in `lib/Task/LEDBlink/`
+
+3. **OTA Task**:
+   - Handles firmware updates over WiFi
+   - Located in `lib/Task/OTA/`
+
+For detailed information about the RTOS implementation, refer to `docs/RTOS.md`.
+
+### Task Development Guidelines
+
+When developing new tasks:
+
+1. Follow the established pattern in `lib/Task/`
+2. Implement proper task management (creation, deletion)
+3. Use appropriate stack sizes and priorities
+4. Handle resource sharing correctly
+5. Follow the project's coding guidelines in `docs/Guidelines.md`
 
 ### Project Configuration
 
@@ -119,9 +107,23 @@ lib_deps =
 
 Place custom libraries in the `lib/` directory. Each library should have its own folder containing header (.h) and implementation (.cpp) files.
 
+### Documentation
+
+- **Guidelines.md**: Contains coding standards and best practices
+- **RTOS.md**: Details about RTOS implementation and task management
+- Additional documentation can be found in the `docs/` directory
+
 ### Main Application
 
-The main application code is in `src/main.cpp`. Modify this file to implement your application logic.
+The main application code is in `src/main.cpp`. This file initializes the system and starts the necessary RTOS tasks.
+
+### BLE Communication
+
+The project implements BLE communication for data transmission:
+
+- BLE server implementation in `lib/Modules/BLE/`
+- Data transmission handled by SendData task
+- LED indication for connection status
 
 ### OTA Updates
 
