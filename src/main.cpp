@@ -1,42 +1,44 @@
 #include <Arduino.h>
 #include <BLE/BLE.h>
 #include <Sensor/Dummy/Dummy.h>
+#include <SendData/SendData.h>
+#include <LEDBlink/LEDBlink.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
-#define led 2
+#define LED_PIN 2
 
-BLE BleServer;
-Dummy DummySensor;
+// Global objects
+BLE bleServer;
+Dummy dummySensor;
+SendData* sendDataTask;
+LEDBlink* ledBlinkTask;
 
 void setup() {
+    // Initialize serial communication
     Serial.begin(115200);
-    Serial.println("Starting BLE Server...");
-
-    BleServer.begin();
-    DummySensor.begin();
-
-    pinMode(led, OUTPUT);
-}
-
-void loop() {
-    if (BleServer.deviceConnected) {
-        Serial.println("Device connected");
-        digitalWrite(led, HIGH);
-        
-        if (DummySensor.shouldUpdate()) {
-            DummySensor.generateRandomValue();
-            String randomValue = DummySensor.getValue();
-            
-            BleServer.setValue(randomValue.c_str());
-            
-            Serial.print("Sent random value via BLE: ");
-            Serial.println(randomValue);
-        }
-    } else {
-        Serial.println("Device disconnected");
-        digitalWrite(led, HIGH);
-        delay(500);
-        digitalWrite(led, LOW);
+    Serial.println("Starting SeiZen-v1 with FreeRTOS...");
+    
+    // Initialize hardware
+    pinMode(LED_PIN, OUTPUT);
+    
+    // Initialize BLE and sensor
+    bleServer.begin();
+    dummySensor.begin();
+    
+    // Create and start the LED blink task
+    ledBlinkTask = new LEDBlink(&bleServer, LED_PIN);
+    if (!ledBlinkTask->startTask(1024, 1)) {
+        Serial.println("Failed to start LEDBlink task!");
     }
-
-    delay(1000);
+    
+    // Create and start the send data task
+    sendDataTask = new SendData(&bleServer, &dummySensor);
+    if (!sendDataTask->startTask(2048, 2)) {
+        Serial.println("Failed to start SendData task!");
+    }
+    
+    Serial.println("All tasks started.");
 }
+
+void loop() {}

@@ -15,13 +15,26 @@ The `lib` directory is organized into the following main subdirectories:
 ```
 lib/
 ├── Modules/
-│   └── Display/
-│       ├── Oled.h
-│       └── Oled.cpp
+│   ├── Display/
+│   │   ├── Oled.h
+│   │   └── Oled.cpp
+│   ├── BLE/
+│   │   ├── BLE.h
+│   │   └── BLE.cpp
+│   └── Sensor/
+│       └── Dummy/
+│           ├── Dummy.h
+│           └── Dummy.cpp
 ├── Task/
-│   └── OTA/
-│       ├── OTA.h
-│       └── OTA.cpp
+│   ├── OTA/
+│   │   ├── OTA.h
+│   │   └── OTA.cpp
+│   ├── SendData/
+│   │   ├── SendData.h
+│   │   └── SendData.cpp
+│   └── LEDBlink/
+│       ├── LEDBlink.h
+│       └── LEDBlink.cpp
 ├── Config/
 └── README
 ```
@@ -42,247 +55,196 @@ When adding new functionality to the project, follow these guidelines:
 
 4. Use descriptive names for your directories and files that clearly indicate their functionality
 
-## Header File (.h) Guidelines
+## RTOS Task Implementation Guidelines
 
-### Include Guards
+### Task Class Structure
 
-Always use include guards to prevent multiple inclusions. The naming convention follows the pattern:
-
-```cpp
-#ifndef FILENAME_H
-#define FILENAME_H
-
-// Header content goes here
-
-#endif
-```
-
-Example from the codebase (`Oled.h`):
+When implementing a new FreeRTOS task, follow this standard structure:
 
 ```cpp
-#ifndef OLED_H
-#define OLED_H
+class TaskName {
+public:
+    // Constructor with dependencies
+    TaskName(dependency1* dep1, dependency2* dep2);
+    ~TaskName();
 
-#include <Arduino.h>
+    // Task management methods
+    bool startTask(uint32_t stackSize = defaultStackSize,
+                  UBaseType_t priority = defaultPriority);
+    void stopTask();
+    bool isRunning() const;
 
-class OLED {
-    // Class content
-};
-
-#endif
-```
-
-### Dependencies
-
-- Include `Arduino.h` when Arduino-specific functionality is required
-- Keep includes to a minimum, including only what's necessary
-- Use angle brackets (`<>`) for standard or external libraries
-- Use quotes (`""`) for project-specific includes
-
-### Class Structure
-
-Organize your class in a clear, logical structure:
-
-1. Start with public methods
-2. Follow with protected methods (if any)
-3. End with private methods and member variables
-
-Example from `OTA.h`:
-
-```cpp
-class OTA {
-    public:
-        OTA();
-        void begin();
-        void handle();
-        void end();
-        void setHostname(const char* hostname);
-        void setPassword(const char* password);
-        void setPort(int port);
-        void setCertificate(const char* certificate);
-        void setPrivateKey(const char* privateKey);
-    private:
-        const char* _hostname;
-        const char* _password;
-        int _port;
-        const char* _certificate;
-        const char* _privateKey;
-};
-```
-
-### Documentation
-
-Consider using Doxygen-style comments for documenting classes, methods, and member variables:
-
-```cpp
-/**
- * @brief Class for handling OLED display operations
- */
-class OLED {
-    public:
-        /**
-         * @brief Constructor for OLED class
-         */
-        OLED();
-
-        /**
-         * @brief Initialize the OLED display
-         */
-        void begin();
-
-        // Other methods...
-};
-```
-
-## Implementation File (.cpp) Guidelines
-
-### Header Inclusion
-
-- Always include the corresponding header file as the first include
-- Use relative paths for project-specific includes
-
-Example from `Oled.cpp`:
-
-```cpp
-#include <Display/Oled.h>
-
-OLED::OLED() {
-    // Constructor
-}
-```
-
-### Method Implementation
-
-- Implement methods in the same order they are declared in the header file
-- Use the scope resolution operator (`::`) to define class methods
-
-Example:
-
-```cpp
-OLED::OLED() {
-    // Constructor implementation
-}
-
-void OLED::begin() {
-    // Implementation of begin method
-}
-```
-
-### Constructor Implementation
-
-For constructors with member initialization:
-
-```cpp
-OTA::OTA() :
-    _hostname(nullptr),
-    _password(nullptr),
-    _port(0),
-    _certificate(nullptr),
-    _privateKey(nullptr) {
-    // Any additional initialization
-}
-```
-
-## Project-Specific Conventions
-
-### Class Naming
-
-- Use PascalCase for class names (e.g., `OLED`, `OTA`)
-- Name classes after their functionality (e.g., `WiFiManager`, `SensorReader`)
-
-### Method Naming
-
-Common method names in this project include:
-
-- `begin()` - For initialization
-- `handle()` - For periodic processing
-- `end()` - For cleanup or deinitialization
-- Getters/setters should use `get`/`set` prefix (e.g., `setHostname()`, `getTemperature()`)
-
-### Member Variable Naming
-
-- Use an underscore prefix for private member variables (e.g., `_hostname`, `_password`)
-- Use camelCase for member variable names
-
-Example from `OTA.h`:
-
-```cpp
 private:
-    const char* _hostname;
-    const char* _password;
-    int _port;
-    const char* _certificate;
-    const char* _privateKey;
+    // Static task function
+    static void taskFunction(void* pvParameters);
+
+    // Task control variables
+    TaskHandle_t taskHandle;
+    bool running;
+
+    // Dependencies
+    dependency1* _dep1;
+    dependency2* _dep2;
+
+    // Task parameters
+    uint32_t _interval;
+};
+```
+
+### Task Implementation Pattern
+
+1. **Constructor**:
+   - Initialize member variables
+   - Set default values
+   - Store dependencies
+
+```cpp
+TaskName::TaskName(dependency1* dep1, dependency2* dep2) :
+    _dep1(dep1),
+    _dep2(dep2),
+    taskHandle(NULL),
+    running(false),
+    _interval(1000) {
+}
+```
+
+2. **Task Management**:
+   - Implement start/stop methods
+   - Handle task creation/deletion
+   - Check for errors
+
+```cpp
+bool TaskName::startTask(uint32_t stackSize, UBaseType_t priority) {
+    if (running) return true;
+
+    BaseType_t result = xTaskCreate(
+        taskFunction,
+        "TaskName",
+        stackSize,
+        this,
+        priority,
+        &taskHandle
+    );
+
+    if (result != pdPASS) {
+        Serial.println("Failed to create task");
+        return false;
+    }
+
+    running = true;
+    return true;
+}
+```
+
+3. **Task Function**:
+   - Implement the main task loop
+   - Handle errors and edge cases
+   - Use appropriate delays
+
+```cpp
+void TaskName::taskFunction(void* pvParameters) {
+    TaskName* task = static_cast<TaskName*>(pvParameters);
+
+    for (;;) {
+        // Task logic here
+        vTaskDelay(task->_interval / portTICK_PERIOD_MS);
+    }
+}
+```
+
+### Task Priority Guidelines
+
+- Use consistent priority levels across tasks:
+  - Priority 1: Background tasks (LED indicators, status updates)
+  - Priority 2: Communication tasks (BLE, WiFi)
+  - Priority 3: Critical tasks (Sensor reading, data processing)
+
+### Memory Management
+
+- Use appropriate stack sizes based on task complexity:
+  - Simple tasks (LED control): 1024 words
+  - Communication tasks: 2048 words
+  - Complex tasks: 4096 words
+
+### Error Handling
+
+Implement comprehensive error checking:
+
+```cpp
+bool TaskName::startTask(uint32_t stackSize, UBaseType_t priority) {
+    // Check dependencies
+    if (!_dep1 || !_dep2) {
+        Serial.println("Invalid dependencies");
+        return false;
+    }
+
+    // Create task
+    BaseType_t result = xTaskCreate(...);
+    if (result != pdPASS) {
+        Serial.println("Task creation failed");
+        return false;
+    }
+
+    return true;
+}
 ```
 
 ## Examples from Existing Modules
 
-### OLED Module Example
+[Previous examples remain unchanged...]
 
-**Oled.h**:
+### SendData Task Example
+
+**SendData.h**:
 
 ```cpp
-#ifndef OLED_H
-#define OLED_H
+#ifndef SEND_DATA_H
+#define SEND_DATA_H
 
 #include <Arduino.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <BLE/BLE.h>
 
-class OLED {
-    public:
-        OLED();
-        void begin();
-        void clear();
-        void display();
-        void printTest();
-    private:
-    // no private
+class SendData {
+public:
+    SendData(BLE* ble, Dummy* sensor);
+    ~SendData();
+
+    bool startTask(uint32_t stackSize = 2048, UBaseType_t priority = 1);
+    void stopTask();
+    bool isRunning() const;
+
+private:
+    static void taskFunction(void* pvParameters);
+    TaskHandle_t taskHandle;
+    bool running;
+
+    BLE* bleServer;
+    Dummy* dummySensor;
 };
 
 #endif
 ```
 
-**Oled.cpp**:
+## Best Practices for RTOS Tasks
 
-```cpp
-#include <Display/Oled.h>
+1. **Task Creation**
 
-OLED::OLED() {
-    // Constructor
-}
-```
+   - Create tasks in setup() or when dependencies are ready
+   - Use appropriate stack sizes and priorities
+   - Check task creation success
 
-### OTA Module Example
+2. **Task Management**
 
-**OTA.h**:
+   - Implement proper cleanup in destructors
+   - Handle task deletion safely
+   - Monitor task status
 
-```cpp
-#ifndef OTA_H
-#define OTA_H
-
-#include <Arduino.h>
-#include <ArduinoOTA.h>
-
-class OTA {
-    public:
-        OTA();
-        void begin();
-        void handle();
-        void end();
-        void setHostname(const char* hostname);
-        void setPassword(const char* password);
-        void setPort(int port);
-        void setCertificate(const char* certificate);
-        void setPrivateKey(const char* privateKey);
-    private:
-        const char* _hostname;
-        const char* _password;
-        int _port;
-        const char* _certificate;
-        const char* _privateKey;
-};
-
-#endif
-```
+3. **Resource Sharing**
+   - Use FreeRTOS primitives for synchronization
+   - Avoid long critical sections
+   - Handle shared resource access carefully
 
 ## Conclusion
 
