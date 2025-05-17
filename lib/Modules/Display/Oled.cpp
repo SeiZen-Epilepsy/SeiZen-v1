@@ -1,4 +1,4 @@
-#include <Display/Oled.h>
+#include "Oled.h"
 
 OLED::OLED() {
     // Constructor
